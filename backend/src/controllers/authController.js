@@ -16,7 +16,10 @@ await user.save();
 const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { expiresIn: '7d' });
 res.json({ token, user: { id: user._id, username: user.username } });
 } catch (err) {
-res.status(500).json({ message: 'Server error' });
+	console.error('Register error:', err);
+	// handle duplicate key race (unique index)
+	if (err && err.code === 11000) return res.status(400).json({ message: 'Username taken' });
+	return res.status(500).json({ message: 'Server error' });
 }
 };
 
@@ -31,7 +34,8 @@ if (!match) return res.status(400).json({ message: 'Invalid credentials' });
 const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { expiresIn: '7d' });
 res.json({ token, user: { id: user._id, username: user.username } });
 } catch (err) {
-res.status(500).json({ message: 'Server error' });
+	console.error('Login error:', err);
+	res.status(500).json({ message: 'Server error' });
 }
 };
 
