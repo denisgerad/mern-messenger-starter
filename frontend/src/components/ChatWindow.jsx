@@ -8,15 +8,19 @@ const [messages, setMessages] = useState([])
 
 
 useEffect(()=>{
-if (!conversationId) return
-API.get(`/messages/${conversationId}`).then(res=> setMessages(res.data.messages)).catch(()=>{})
+	if (!conversationId) return
+	// derive a stable conversation id from the two user ids so both sides use the same id
+	const convId = [user.id, conversationId].sort().join(':')
+	API.get(`/messages/${convId}`).then(res=> setMessages(res.data.messages)).catch(()=>{})
 }, [conversationId])
 
 
 useEffect(()=>{
 if (!socket) return
 socket.on('receive:message', (msg)=>{
-if (msg.conversationId === conversationId) setMessages(prev => [...prev, msg])
+	// only append if the incoming message belongs to the current conversation
+	const convId = [user.id, conversationId].sort().join(':')
+	if (msg.conversationId === convId) setMessages(prev => [...prev, msg])
 })
 return ()=> socket.off('receive:message')
 }, [socket, conversationId])
@@ -24,9 +28,9 @@ return ()=> socket.off('receive:message')
 
 const send = async (text) => {
 	if (!socket || !conversationId) return
-	// when selecting a user from the list we use their id as the "conversationId"/receiver
 	const receiver = conversationId
-	const payload = { conversationId, sender: user.id, receiver, text }
+	const convId = [user.id, receiver].sort().join(':')
+	const payload = { conversationId: convId, sender: user.id, receiver, text }
 	socket.emit('send:message', payload)
 	setMessages(prev => [...prev, { ...payload, createdAt: new Date().toISOString() }])
 }
