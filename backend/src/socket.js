@@ -35,14 +35,17 @@ console.log('socket connected', socket.id);
 
 
 socket.on('send:message', async (payload) => {
-// payload: { conversationId, sender, receiver, text }
-const msg = new Message({ ...payload });
-await msg.save();
-// emit to receiver if online
-const toSocket = online.get(payload.receiver);
-if (toSocket) io.to(toSocket).emit('receive:message', msg);
-// ack to sender
-socket.emit('message:sent', msg);
+	// payload: { conversationId, sender, receiver, text }
+	console.log('send:message payload:', payload)
+	const msg = new Message({ ...payload });
+	await msg.save();
+	// emit to receiver if online
+	const toSocket = online.get(payload.receiver);
+	console.log('online keys:', Array.from(online.keys()))
+	console.log('toSocket for receiver', payload.receiver, toSocket)
+	if (toSocket) io.to(toSocket).emit('receive:message', msg);
+	// ack to sender
+	socket.emit('message:sent', msg);
 });
 
 
