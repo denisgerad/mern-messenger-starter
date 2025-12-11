@@ -26,6 +26,11 @@ socket.on('receive:message', (msg)=>{
 		socket.on('message:deleted', ({ id }) => {
 			setMessages(prev => prev.filter(m => (m._id || m.id) !== id))
 		})
+		socket.on('conversation:deleted', ({ conversationId: convId }) => {
+			// if the deleted conversation is the one currently open, clear messages
+			const currentConv = [user.id, conversationId].sort().join(':')
+			if (convId === currentConv) setMessages([])
+		})
 return ()=> socket.off('receive:message')
 }, [socket, conversationId])
 
@@ -61,6 +66,20 @@ return (
 				</div>
 			))}
 </div>
+			<div style={{padding:10}}>
+				<button onClick={async ()=>{
+					if (!conversationId) return;
+					const convId = [user.id, conversationId].sort().join(':')
+					try{
+						await API.delete(`/messages/conversation/${convId}`)
+						// tell other participant to clear the conversation
+						socket && socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId })
+						setMessages([])
+					}catch(err){
+						alert(err.response?.data?.message || 'Delete conversation failed')
+					}
+				}}>Delete Conversation</button>
+			</div>
 <MessageInput onSend={send} />
 </div>
 )

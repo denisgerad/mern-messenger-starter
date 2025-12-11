@@ -41,3 +41,19 @@ exports.deleteMessage = async (req, res) => {
 		return res.status(500).json({ message: 'Server error' });
 	}
 };
+
+exports.deleteConversation = async (req, res) => {
+	const { conversationId } = req.params;
+	try {
+		// conversationId format expected as "id1:id2"
+		const parts = (conversationId || '').split(':').filter(Boolean);
+		if (!parts.length) return res.status(400).json({ message: 'Invalid conversationId' });
+		// requester must be one of the participants
+		if (!parts.includes(req.user.id)) return res.status(403).json({ message: 'Forbidden' });
+		await Message.deleteMany({ conversationId });
+		return res.json({ message: 'Conversation deleted', conversationId });
+	} catch (err) {
+		console.error('deleteConversation error', err);
+		return res.status(500).json({ message: 'Server error' });
+	}
+};

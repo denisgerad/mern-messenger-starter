@@ -53,6 +53,12 @@ socket.on('send:message', async (payload) => {
 		const toSocket = online.get(receiver)
 		if (toSocket) io.to(toSocket).emit('message:deleted', { id })
 	})
+  
+	// forward conversation deletion events
+	socket.on('conversation:deleted', ({ conversationId, otherId }) => {
+		const toSocket = online.get(otherId)
+		if (toSocket) io.to(toSocket).emit('conversation:deleted', { conversationId })
+	})
 
 
 	socket.on('disconnect', () => {
