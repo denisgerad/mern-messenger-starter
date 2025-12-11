@@ -23,6 +23,9 @@ socket.on('receive:message', (msg)=>{
 	console.log('ChatWindow convId:', convId, 'incoming msg.convId:', msg.conversationId)
 	if (msg.conversationId === convId) setMessages(prev => [...prev, msg])
 })
+		socket.on('message:deleted', ({ id }) => {
+			setMessages(prev => prev.filter(m => (m._id || m.id) !== id))
+		})
 return ()=> socket.off('receive:message')
 }, [socket, conversationId])
 
@@ -43,7 +46,7 @@ return (
 			{messages.map((m, i)=> (
 				<div key={m._id || i} style={{display:'flex', justifyContent:'space-between', padding:6}}>
 					<div><b>{m.sender}</b>: {m.text}</div>
-					{m.sender === user.id && (
+					{((m.sender && (m.sender._id || m.sender).toString()) === user.id) && (
 						<button style={{marginLeft:8}} onClick={async ()=>{
 							try{
 								await API.delete(`/messages/${m._id}`)
