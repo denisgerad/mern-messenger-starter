@@ -23,10 +23,12 @@ return ()=> socket.off('receive:message')
 
 
 const send = async (text) => {
-if (!socket || !conversationId) return
-const payload = { conversationId, sender: user.id, receiver: 'TODO:receiverId', text }
-socket.emit('send:message', payload)
-setMessages(prev => [...prev, { ...payload, createdAt: new Date().toISOString() }])
+	if (!socket || !conversationId) return
+	// when selecting a user from the list we use their id as the "conversationId"/receiver
+	const receiver = conversationId
+	const payload = { conversationId, sender: user.id, receiver, text }
+	socket.emit('send:message', payload)
+	setMessages(prev => [...prev, { ...payload, createdAt: new Date().toISOString() }])
 }
 
 
