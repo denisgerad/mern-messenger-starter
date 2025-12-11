@@ -20,6 +20,7 @@ if (!socket) return
 socket.on('receive:message', (msg)=>{
 	// only append if the incoming message belongs to the current conversation
 	const convId = [user.id, conversationId].sort().join(':')
+	console.log('ChatWindow convId:', convId, 'incoming msg.convId:', msg.conversationId)
 	if (msg.conversationId === convId) setMessages(prev => [...prev, msg])
 })
 return ()=> socket.off('receive:message')
