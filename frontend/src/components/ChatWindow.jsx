@@ -40,9 +40,23 @@ const send = async (text) => {
 return (
 <div style={{display:'flex', flexDirection:'column', height:'100%'}}>
 <div style={{flex:1, overflow:'auto'}}>
-{messages.map((m, i)=> (
-<div key={i}><b>{m.sender}</b>: {m.text}</div>
-))}
+			{messages.map((m, i)=> (
+				<div key={m._id || i} style={{display:'flex', justifyContent:'space-between', padding:6}}>
+					<div><b>{m.sender}</b>: {m.text}</div>
+					{m.sender === user.id && (
+						<button style={{marginLeft:8}} onClick={async ()=>{
+							try{
+								await API.delete(`/messages/${m._id}`)
+								// notify receiver via socket so they can remove the message
+								socket && socket.emit('delete:message', { id: m._id, receiver: m.receiver })
+								setMessages(prev => prev.filter(x => (x._id || x.id) !== (m._id || m.id)))
+							}catch(err){
+								alert(err.response?.data?.message || 'Delete failed')
+							}
+						}}>Delete</button>
+					)}
+				</div>
+			))}
 </div>
 <MessageInput onSend={send} />
 </div>

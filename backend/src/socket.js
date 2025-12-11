@@ -48,6 +48,12 @@ socket.on('send:message', async (payload) => {
 	socket.emit('message:sent', msg);
 });
 
+	// forward delete events coming from client API actions
+	socket.on('delete:message', ({ id, receiver }) => {
+		const toSocket = online.get(receiver)
+		if (toSocket) io.to(toSocket).emit('message:deleted', { id })
+	})
+
 
 	socket.on('disconnect', () => {
 		if (socket.userId) {

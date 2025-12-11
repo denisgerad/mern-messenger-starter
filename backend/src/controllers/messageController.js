@@ -22,3 +22,18 @@ res.json({ messages: msgs });
 res.status(500).json({ message: 'Server error' });
 }
 };
+
+exports.deleteMessage = async (req, res) => {
+	const { id } = req.params;
+	try {
+		const msg = await Message.findById(id);
+		if (!msg) return res.status(404).json({ message: 'Message not found' });
+		// only sender can delete
+		if (msg.sender.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+		await msg.remove();
+		return res.json({ message: 'Deleted', id });
+	} catch (err) {
+		console.error('deleteMessage error', err);
+		return res.status(500).json({ message: 'Server error' });
+	}
+};
