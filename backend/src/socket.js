@@ -11,19 +11,27 @@ cors: { origin: options.clientOrigin || '*' }
 });
 
 
-// map userId -> socketId
+// map userId -> socketId and userId -> username
 const online = new Map();
+const usernames = new Map();
 
 
 io.on('connection', socket => {
 console.log('socket connected', socket.id);
 
 
-socket.on('user:online', (userId) => {
-online.set(userId, socket.id);
-socket.userId = userId;
-io.emit('online:users', Array.from(online.keys()));
-});
+	// payload can be either a userId string or an object { id, username }
+	socket.on('user:online', (payload) => {
+		const userId = typeof payload === 'string' ? payload : payload?.id
+		const username = typeof payload === 'object' && payload?.username ? payload.username : null
+		if (!userId) return
+		online.set(userId, socket.id);
+		socket.userId = userId;
+		if (username) usernames.set(userId, username)
+		// emit array of { id, username }
+		const list = Array.from(online.keys()).map(id => ({ id, username: usernames.get(id) || id }))
+		io.emit('online:users', list);
+	});
 
 
 socket.on('send:message', async (payload) => {
@@ -38,10 +46,14 @@ socket.emit('message:sent', msg);
 });
 
 
-socket.on('disconnect', () => {
-if (socket.userId) online.delete(socket.userId);
-io.emit('online:users', Array.from(online.keys()));
-});
+	socket.on('disconnect', () => {
+		if (socket.userId) {
+			online.delete(socket.userId);
+			usernames.delete(socket.userId);
+		}
+		const list = Array.from(online.keys()).map(id => ({ id, username: usernames.get(id) || id }))
+		io.emit('online:users', list);
+	});
 });
 
 

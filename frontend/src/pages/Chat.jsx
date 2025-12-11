@@ -12,19 +12,23 @@ export default function Chat(){
 const { user, logout } = useContext(AuthContext)
 const [socket, setSocket] = useState(null)
 const [activeConversation, setActiveConversation] = useState(null)
+const [onlineUsers, setOnlineUsers] = useState([])
 
 
 useEffect(()=>{
 if (!user) return
 const s = io(SOCKET_URL)
 setSocket(s)
-s.on('connect', ()=>{
-s.emit('user:online', user.id)
-})
+		s.on('connect', ()=>{
+			s.emit('user:online', { id: user.id, username: user.username })
+		})
 s.on('receive:message', (msg)=>{
 // handle incoming
 console.log('incoming msg', msg)
 })
+		s.on('online:users', (list) => {
+			setOnlineUsers(list || [])
+		})
 return ()=> s.disconnect()
 }, [user])
 
@@ -37,7 +41,7 @@ return (
 <aside style={{width:300}}>
 <h3>{user.username}</h3>
 <button onClick={logout}>Logout</button>
-<ChatList onSelect={setActiveConversation} />
+<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} />
 </aside>
 <main style={{flex:1}}>
 <ChatWindow socket={socket} conversationId={activeConversation} user={user} />
