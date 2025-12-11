@@ -29,7 +29,10 @@ exports.deleteMessage = async (req, res) => {
 		const msg = await Message.findById(id);
 		if (!msg) return res.status(404).json({ message: 'Message not found' });
 		// only sender can delete
-		if (msg.sender.toString() !== req.user.id) return res.status(403).json({ message: 'Forbidden' });
+		if (msg.sender.toString() !== req.user.id) {
+			console.warn('delete forbidden: msg.sender=%s req.user.id=%s id=%s', msg.sender.toString(), req.user.id, id)
+			return res.status(403).json({ message: 'Forbidden' });
+		}
 		// use model deletion to avoid document method differences across mongoose versions
 		await Message.findByIdAndDelete(id);
 		return res.json({ message: 'Deleted', id });
