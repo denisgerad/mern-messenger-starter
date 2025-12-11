@@ -22,10 +22,14 @@ setSocket(s)
 		s.on('connect', ()=>{
 			s.emit('user:online', { id: user.id, username: user.username })
 		})
-s.on('receive:message', (msg)=>{
-// handle incoming
-console.log('incoming msg', msg)
-})
+		s.on('receive:message', (msg)=>{
+			// handle incoming
+			console.log('incoming msg', msg)
+			// if the incoming message is for this user, open the conversation with the sender
+			if (msg.receiver === user.id) {
+				setActiveConversation(prev => (prev === msg.sender ? prev : msg.sender))
+			}
+		})
 		s.on('online:users', (list) => {
 			setOnlineUsers(list || [])
 		})
