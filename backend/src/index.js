@@ -19,6 +19,11 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/messages', messageRoutes);
 
+// Health check endpoint for cron jobs (e.g., ping from Render)
+app.get('/cron/health', (req, res) => {
+	res.status(200).send('Cron job OK');
+});
+
 
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
 .then(() => console.log('Mongo connected'))
