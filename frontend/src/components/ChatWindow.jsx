@@ -50,7 +50,7 @@ return (
 <div style={{flex:1, overflow:'auto'}}>
 			{messages.map((m, i)=> (
 			<div key={m._id || i} style={{padding:6}}>
-				<div><b>{m.sender}</b>: {m.text}</div>
+				<div>{m.text}</div>
 				</div>
 			))}
 </div>
