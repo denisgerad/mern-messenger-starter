@@ -2,6 +2,7 @@ const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const { port, mongoUri, clientOrigin } = require('./config');
 const authRoutes = require('./routes/auth');
 const messageRoutes = require('./routes/messages');
@@ -12,8 +13,9 @@ const app = express();
 const server = http.createServer(app);
 
 
-app.use(cors({ origin: clientOrigin }));
+app.use(cors({ origin: clientOrigin, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 
 app.use('/api/auth', authRoutes);

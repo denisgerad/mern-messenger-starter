@@ -14,7 +14,14 @@ const hash = await bcrypt.hash(password, salt);
 const user = new User({ username, passwordHash: hash });
 await user.save();
 const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { expiresIn: '7d' });
-res.json({ token, user: { id: user._id, username: user.username } });
+		// Set httpOnly cookie
+		res.cookie('token', token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+		});
+		res.json({ user: { id: user._id, username: user.username } });
 } catch (err) {
 	console.error('Register error:', err);
 	// handle duplicate key race (unique index)
@@ -32,13 +39,30 @@ if (!user) return res.status(400).json({ message: 'Invalid credentials' });
 const match = await bcrypt.compare(password, user.passwordHash);
 if (!match) return res.status(400).json({ message: 'Invalid credentials' });
 const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { expiresIn: '7d' });
-res.json({ token, user: { id: user._id, username: user.username } });
+		// Set httpOnly cookie
+		res.cookie('token', token, {
+			httpOnly: true,
+			secure: process.env.NODE_ENV === 'production',
+			sameSite: 'strict',
+			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+		});
+		res.json({ user: { id: user._id, username: user.username } });
 } catch (err) {
 	console.error('Login error:', err);
 	res.status(500).json({ message: 'Server error' });
 }
 };
 
+
+// Logout endpoint to clear the httpOnly cookie
+exports.logout = async (req, res) => {
+\tres.clearCookie('token', {
+\t\thttpOnly: true,
+\t\tsecure: process.env.NODE_ENV === 'production',
+\t\tsameSite: 'strict'
+\t});
+\tres.json({ message: 'Logged out successfully' });
+};
 
 // Placeholder for Web3 signature login (future)
 exports.web3Login = async (req, res) => {
