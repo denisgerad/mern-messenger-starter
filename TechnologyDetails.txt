@@ -1,0 +1,138 @@
+Technology Details & Their Roles
+
+Below are the components used in this MERN Messenger project and what purpose each one serves.
+
+🔹 Axios – API Communication (Frontend → Backend)
+
+Purpose:
+Axios is used in the frontend to perform HTTP requests to the backend API.
+
+Why Axios?
+
+Cleaner syntax than fetch()
+
+Built-in JSON handling
+
+Automatic error handling
+
+Supports request/response interceptors (useful for attaching JWT tokens)
+
+Where it's used:
+
+Register (POST /api/auth/register)
+
+Login (POST /api/auth/login)
+
+Fetch user list
+
+Fetch stored messages
+
+🔹 Socket.IO Client – Real-Time Messaging (Frontend)
+
+The frontend uses the Socket.IO client library to establish a persistent WebSocket connection with the backend.
+
+Why it’s used:
+
+Enables instant message delivery
+
+Receives live updates (other users typing, online status, new messages)
+
+Automatically reconnects if connection drops
+
+Falls back gracefully if WebSockets are blocked
+
+Use Cases in the app:
+
+Notify server when a user logs in
+
+Send a message instantly
+
+Receive messages instantly without refreshing
+
+🔹 Socket.IO Server – WebSocket Messaging (Backend)
+
+This runs inside the Express server.
+
+Purpose:
+
+Creates a real-time bi-directional communication channel
+
+Manages online users
+
+Forwards messages from sender → receiver
+
+Emits events like user-online, message-received
+
+Why Socket.IO?
+
+Works even behind firewalls and proxies
+
+Built-in ping/pong, reconnects, event-based model
+
+Easier than raw WebSockets
+
+🔹 Password Hashing – bcrypt (Backend)
+
+Passwords are not stored in plain text.
+bcrypt hashes the password before storing it in MongoDB.
+
+Why bcrypt?
+
+Uses slow, salted hashing → prevents brute force attacks
+
+Even if someone steals the DB, raw passwords are safe
+
+Industry standard for user authentication
+
+Workflow:
+
+User signs up → password hashed using bcrypt
+
+User logs in → bcrypt compares hash instead of plaintext
+
+🔹 JWT Token-Based Session (Backend + Frontend)
+
+After login, the backend issues a JWT token.
+
+Purpose:
+
+Identifies the user without storing sessions on the server
+
+Attached automatically with every Axios request
+
+Used by protected routes like GET /messages/:id
+
+Why JWT?
+
+Stateless → works well with serverless deployments like Render
+
+Secure, fast, and easy to verify
+
+No need to store sessions in Redis
+
+What’s inside the JWT?
+
+User ID
+
+Expiration time
+
+Signature using your secret key
+
+🔹 Socket.IO WebSocket Transport
+
+Socket.IO automatically handles:
+
+Upgrade from HTTP → WebSocket
+
+Transport fallback (XHR polling if WS blocked)
+
+Heartbeats to keep connection alive
+
+Reconnection logic
+
+You don’t need to manage any of this manually.
+
+This is what makes chatting "instant".
+
+
+

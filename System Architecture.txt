@@ -1,0 +1,87 @@
+                       ┌──────────────────────────┐
+                       │        User Browser      │
+                       │ (React/Next.js Frontend) │
+                       └─────────────┬────────────┘
+                                     │
+                                     │ HTTPS (REST API)
+                                     ▼
+                 ┌──────────────────────────────────────────┐
+                 │      Render (Node.js + Express API)      │
+                 │     Backend Server + Socket.IO Server    │
+                 └─────────────┬────────────────────────────┘
+                               │
+                               │ WebSockets (wss://)
+                               ▼
+                 ┌──────────────────────────────────────────┐
+                 │            Socket.IO Engine              │
+                 │  - Tracks Online Users                   │
+                 │  - Sends/Receives Realtime Messages      │
+                 └─────────────┬────────────────────────────┘
+                               │
+                               │ MongoDB Driver (Mongoose)
+                               ▼
+                 ┌──────────────────────────────────────────┐
+                 │        MongoDB Atlas (Cloud DB)          │
+                 │  - Users Collection                      │
+                 │  - Messages Collection                   │
+                 │  - Password Hashing Stored (bcrypt)      │
+                 └──────────────────────────────────────────┘
+
+Flow Breakdown
+1. User opens the frontend (Next.js on Vercel)
+
+The browser downloads the UI and loads:
+
+Login/Register forms
+
+Socket.IO client
+
+Axios API wrapper
+
+2. Frontend communicates to Backend (Render)
+
+REST API (HTTPS)
+
+Register → POST /api/auth/register  
+Login → POST /api/auth/login  
+Fetch users → GET /api/users
+Fetch messages → GET /api/messages/:id
+
+3. WebSocket Connection Opens (wss://)
+
+Frontend connects to backend:
+
+socket = io("https://mern-messenger-backend.onrender.com")
+
+
+Used for:
+
+Sending messages
+
+Receiving messages
+
+Updating online status
+
+Notifying new connections
+
+4. Backend Sends/Receives Messages
+
+Socket.IO handles:
+
+Identifying users
+
+Emitting real-time events
+
+Broadcasting messages to the correct receiver
+
+5. Backend writes to MongoDB
+
+Each message is saved in MongoDB Atlas in messages collection.
+
+User accounts stored in users collection.
+
+6. Messages returned to clients
+
+Stored messages delivered via REST
+
+Live messages delivered via WebSockets
