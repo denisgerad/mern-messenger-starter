@@ -18,7 +18,7 @@ const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { e
 		res.cookie('token', token, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
+			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 		});
 		res.json({ user: { id: user._id, username: user.username } });
@@ -43,7 +43,7 @@ const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { e
 		res.cookie('token', token, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production',
-			sameSite: 'strict',
+			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 		});
 		res.json({ user: { id: user._id, username: user.username } });
@@ -56,12 +56,12 @@ const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { e
 
 // Logout endpoint to clear the httpOnly cookie
 exports.logout = async (req, res) => {
-\tres.clearCookie('token', {
-\t\thttpOnly: true,
-\t\tsecure: process.env.NODE_ENV === 'production',
-\t\tsameSite: 'strict'
-\t});
-\tres.json({ message: 'Logged out successfully' });
+	res.clearCookie('token', {
+		httpOnly: true,
+		secure: process.env.NODE_ENV === 'production',
+		sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+	});
+	res.json({ message: 'Logged out successfully' });
 };
 
 // Placeholder for Web3 signature login (future)
