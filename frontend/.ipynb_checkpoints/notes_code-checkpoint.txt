@@ -1,0 +1,231 @@
+api.js
+Quick summary
+API is an Axios instance pre-configured with a base URL (from VITE_API_BASE or a local fallback).
+The request interceptor reads the JWT token from localStorage and attaches it as the Authorization: Bearer <token> header for every outgoing request.
+The module exports the instance so other files import it and call API.get(...), API.post(...), etc.
+It does not itself “get” a token from the server — it reads whatever token your app has already saved (e.g., after login).
+You can extend it (response interceptors, automatic refresh on 401, global error logging).
+
+Line-by-line explanation & what to set for Render
+import axios from 'axios'
+loads Axios library.
+
+const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000/api' })
+Creates an Axios instance with a baseURL so other modules can do API.post('/auth/login', data) instead of writing the full URL.
+
+In development Vite sets import.meta.env.VITE_API_BASE from .env (e.g. VITE_API_BASE=http://localhost:8000/api).
+
+In production set VITE_API_BASE=https://mern-messenger-backend.onrender.com/api (Vercel environment variable).
+
+The || 'http://localhost:5000/api' is a fallback if env var is missing.
+
+API.interceptors.request.use((config) => { ... })
+A request interceptor runs before every HTTP request from this instance. It gives you a chance to mutate the request (attach headers, add logging, etc).
+
+Inside:
+
+const token = localStorage.getItem('token')
+if (token) config.headers.Authorization = `Bearer ${token}`
+return config
+
+
+Reads the JWT from localStorage (key token).
+
+If present, sets Authorization header to Bearer <token>. Many backends expect this format to authenticate requests.
+
+Returns the modified config so Axios continues.
+
+export default API
+Exports the configured instance for reuse across your app.
+
+Important notes / best practices
+
+This code does not fetch or refresh the token. The token must be stored (e.g., after you call POST /api/auth/login and get { token }) somewhere — typically localStorage.setItem('token', token) in your login flow.
+
+Storing tokens in localStorage is simple but has XSS risk. For production consider httpOnly cookies or additional hardening. For a portfolio project localStorage is OK if you understand the tradeoffs.
+
+Add a response interceptor to handle 401 Unauthorized (logout, redirect to login, or attempt token refresh).
+
+Set proper env vars on Vercel: NEXT_PUBLIC_API_URL or VITE_API_BASE pointing to your Render backend URL (including /api if you prefer).
+
+CORS: Ensure backend allows your frontend origin; otherwise requests will be blocked before the interceptor runs.
+
+Example usage elsewhere in your app
+// authService.js
+import API from './api' // path to the file containing the code you pasted
+
+export const login = async (username, password) => {
+  const res = await API.post('/auth/login', { username, password })
+  // save token for later requests
+  localStorage.setItem('token', res.data.token)
+  return res.data
+}
+
+export const fetchUsers = async () => {
+  return API.get('/users') // Authorization header automatically attached if token present
+}
+
+Fully commented version you can paste into your code
+// src/api/api.js
+import axios from 'axios'
+
+// Create a reusable axios instance with a base URL.
+// In development Vite injects import.meta.env.VITE_API_BASE from .env
+// In production set VITE_API_BASE to your Render backend URL (e.g. https://mern-messenger-backend.onrender.com/api)
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000/api'
+})
+
+// Request interceptor: runs before every request made with this instance.
+// We use it to attach the JWT (if present) to the Authorization header.
+API.interceptors.request.use((config) => {
+  // Read token (should be saved by your login function)
+  const token = localStorage.getItem('token')
+
+  // If token exists, attach it as: Authorization: Bearer <token>
+  if (token) {
+    // Ensure headers object exists
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  // Return modified config so the request proceeds
+  return config
+}, (error) => {
+  // Optional: handle request setup errors
+  return Promise.reject(error)
+})
+
+// Optionally add a response interceptor (example):
+// API.interceptors.response.use(
+//   response => response,
+//   error => {
+//     if (error.response && error.response.status === 401) {
+//       // handle unauthorized globally (e.g., logout and redirect to login)
+//       // localStorage.removeItem('token')
+//       // window.location.href = '/login'
+//     }
+//     return Promise.reject(error)
+//   }
+// )
+
+export default API
+
+Suggested inline comments you can add (short)
+
+// baseURL: use VITE_API_BASE or fallback to local
+
+// attach JWT from localStorage as Authorization header
+
+// exported instance: use API.get/post/put/delete everywhere
+
+HTTPOnly cookies are a type of cookie that cannot be accessed by client-side scripts like JavaScript, making them a crucial security feature to prevent theft via cross-site scripting (XSS) attacks. The "HttpOnly" flag is set by the server, ensuring that the cookie's contents are protected from being read by malicious scripts injected into a website. This means only the server can access and modify the cookie, which is especially important for sensitive data like session IDs. 
+
+Key Features of HTTPOnly Cookies
+1. httpOnly: true
+
+Prevents JavaScript access.
+
+Main protection against token theft.
+
+2. secure: true
+
+Cookie only sent over HTTPS, not HTTP.
+
+3. sameSite
+
+Controls cross-site cookie sending:
+
+Lax (recommended): good balance — works for most login flows.
+
+Strict: highest security, but breaks cross-domain actions.
+
+None (requires secure): required if frontend and backend are on different domains.
+
+4. expires / maxAge
+
+Controls token lifetime.
+
+5. server controls cookie creation + deletion
+
+Client cannot manually tamper with an HTTPOnly cookie.
+
+📦 Lifecycle of JWT in HTTPOnly Cookie (Best Practice)
+
+Login Flow
+
+User enters username/password.
+
+Backend verifies credentials.
+
+Backend creates a JWT and sets it like:
+
+res.cookie("token", jwtToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
+})
+
+
+Browser stores it silently.
+
+Browser → Server
+
+The cookie is automatically sent with every request without any code like this:
+
+Cookie: token=eyJhbGciOiJI...
+
+
+Logout Flow
+
+Backend clears the cookie:
+
+res.clearCookie("token");
+
+🚫 What HTTPOnly Cookies DO NOT prevent
+
+They do NOT prevent CSRF by themselves!
+That's why sameSite=lax is important.
+
+They do NOT encrypt messages or data.
+Encryption is separate (e2e encryption or HTTPS).
+
+They do NOT stop your backend from being hacked if insecure.
+
+✔️ When should you use HTTPOnly cookies?
+
+Use them in production for:
+
+Login sessions
+
+JWTs
+
+Refresh tokens
+
+Any sensitive authentication value
+
+Use localStorage only for non-sensitive UI state (theme, layout, preferences).
+
+💡 For your MERN Chat App
+
+Production recommendation:
+
+Use HTTPOnly cookies for JWT auth.
+
+Use access token + refresh token pattern.
+
+Keep WebSockets authenticated via:
+
+Cookie-based session OR
+
+Token sent during connection handshake.
+
+📚 Perfect summary for your README
+
+You can copy this:
+
+In production, authentication should use HTTPOnly cookies instead of storing JWT tokens in localStorage.
+HTTPOnly cookies cannot be accessed by JavaScript, making them resistant to XSS token theft.
+The browser automatically sends the cookie with every request, and the server validates it.
+This offers a more secure session model compared to localStorage-based token authentication.

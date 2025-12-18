@@ -1,0 +1,659 @@
+api.js
+Quick summary
+API is an Axios instance pre-configured with a base URL (from VITE_API_BASE or a local fallback).
+The request interceptor reads the JWT token from localStorage and attaches it as the Authorization: Bearer <token> header for every outgoing request.
+The module exports the instance so other files import it and call API.get(...), API.post(...), etc.
+It does not itself “get” a token from the server — it reads whatever token your app has already saved (e.g., after login).
+You can extend it (response interceptors, automatic refresh on 401, global error logging).
+
+Line-by-line explanation & what to set for Render
+import axios from 'axios'
+loads Axios library.
+
+const API = axios.create({ baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000/api' })
+Creates an Axios instance with a baseURL so other modules can do API.post('/auth/login', data) instead of writing the full URL.
+
+In development Vite sets import.meta.env.VITE_API_BASE from .env (e.g. VITE_API_BASE=http://localhost:8000/api).
+
+In production set VITE_API_BASE=https://mern-messenger-backend.onrender.com/api (Vercel environment variable).
+
+The || 'http://localhost:5000/api' is a fallback if env var is missing.
+
+API.interceptors.request.use((config) => { ... })
+A request interceptor runs before every HTTP request from this instance. It gives you a chance to mutate the request (attach headers, add logging, etc).
+
+Inside:
+
+const token = localStorage.getItem('token')
+if (token) config.headers.Authorization = `Bearer ${token}`
+return config
+
+
+Reads the JWT from localStorage (key token).
+
+If present, sets Authorization header to Bearer <token>. Many backends expect this format to authenticate requests.
+
+Returns the modified config so Axios continues.
+
+export default API
+Exports the configured instance for reuse across your app.
+
+Important notes / best practices
+
+This code does not fetch or refresh the token. The token must be stored (e.g., after you call POST /api/auth/login and get { token }) somewhere — typically localStorage.setItem('token', token) in your login flow.
+
+Storing tokens in localStorage is simple but has XSS risk. For production consider httpOnly cookies or additional hardening. For a portfolio project localStorage is OK if you understand the tradeoffs.
+
+Add a response interceptor to handle 401 Unauthorized (logout, redirect to login, or attempt token refresh).
+
+Set proper env vars on Vercel: NEXT_PUBLIC_API_URL or VITE_API_BASE pointing to your Render backend URL (including /api if you prefer).
+
+CORS: Ensure backend allows your frontend origin; otherwise requests will be blocked before the interceptor runs.
+
+Example usage elsewhere in your app
+// authService.js
+import API from './api' // path to the file containing the code you pasted
+
+export const login = async (username, password) => {
+  const res = await API.post('/auth/login', { username, password })
+  // save token for later requests
+  localStorage.setItem('token', res.data.token)
+  return res.data
+}
+
+export const fetchUsers = async () => {
+  return API.get('/users') // Authorization header automatically attached if token present
+}
+
+Fully commented version you can paste into your code
+// src/api/api.js
+import axios from 'axios'
+
+// Create a reusable axios instance with a base URL.
+// In development Vite injects import.meta.env.VITE_API_BASE from .env
+// In production set VITE_API_BASE to your Render backend URL (e.g. https://mern-messenger-backend.onrender.com/api)
+const API = axios.create({
+  baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:5000/api'
+})
+
+// Request interceptor: runs before every request made with this instance.
+// We use it to attach the JWT (if present) to the Authorization header.
+API.interceptors.request.use((config) => {
+  // Read token (should be saved by your login function)
+  const token = localStorage.getItem('token')
+
+  // If token exists, attach it as: Authorization: Bearer <token>
+  if (token) {
+    // Ensure headers object exists
+    config.headers = config.headers || {}
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  // Return modified config so the request proceeds
+  return config
+}, (error) => {
+  // Optional: handle request setup errors
+  return Promise.reject(error)
+})
+
+// Optionally add a response interceptor (example):
+// API.interceptors.response.use(
+//   response => response,
+//   error => {
+//     if (error.response && error.response.status === 401) {
+//       // handle unauthorized globally (e.g., logout and redirect to login)
+//       // localStorage.removeItem('token')
+//       // window.location.href = '/login'
+//     }
+//     return Promise.reject(error)
+//   }
+// )
+
+export default API
+
+Suggested inline comments you can add (short)
+
+// baseURL: use VITE_API_BASE or fallback to local
+
+// attach JWT from localStorage as Authorization header
+
+// exported instance: use API.get/post/put/delete everywhere
+
+HTTPOnly cookies are a type of cookie that cannot be accessed by client-side scripts like JavaScript, making them a crucial security feature to prevent theft via cross-site scripting (XSS) attacks. The "HttpOnly" flag is set by the server, ensuring that the cookie's contents are protected from being read by malicious scripts injected into a website. This means only the server can access and modify the cookie, which is especially important for sensitive data like session IDs. 
+
+Key Features of HTTPOnly Cookies
+1. httpOnly: true
+
+Prevents JavaScript access.
+
+Main protection against token theft.
+
+2. secure: true
+
+Cookie only sent over HTTPS, not HTTP.
+
+3. sameSite
+
+Controls cross-site cookie sending:
+
+Lax (recommended): good balance — works for most login flows.
+
+Strict: highest security, but breaks cross-domain actions.
+
+None (requires secure): required if frontend and backend are on different domains.
+
+4. expires / maxAge
+
+Controls token lifetime.
+
+5. server controls cookie creation + deletion
+
+Client cannot manually tamper with an HTTPOnly cookie.
+
+📦 Lifecycle of JWT in HTTPOnly Cookie (Best Practice)
+
+Login Flow
+
+User enters username/password.
+
+Backend verifies credentials.
+
+Backend creates a JWT and sets it like:
+
+res.cookie("token", jwtToken, {
+  httpOnly: true,
+  secure: true,
+  sameSite: "lax",
+  maxAge: 24 * 60 * 60 * 1000 // 1 day
+})
+
+
+Browser stores it silently.
+
+Browser → Server
+
+The cookie is automatically sent with every request without any code like this:
+
+Cookie: token=eyJhbGciOiJI...
+
+
+Logout Flow
+
+Backend clears the cookie:
+
+res.clearCookie("token");
+
+🚫 What HTTPOnly Cookies DO NOT prevent
+
+They do NOT prevent CSRF by themselves!
+That's why sameSite=lax is important.
+
+They do NOT encrypt messages or data.
+Encryption is separate (e2e encryption or HTTPS).
+
+They do NOT stop your backend from being hacked if insecure.
+
+✔️ When should you use HTTPOnly cookies?
+
+Use them in production for:
+
+Login sessions
+
+JWTs
+
+Refresh tokens
+
+Any sensitive authentication value
+
+Use localStorage only for non-sensitive UI state (theme, layout, preferences).
+
+💡 For your MERN Chat App
+
+Production recommendation:
+
+Use HTTPOnly cookies for JWT auth.
+
+Use access token + refresh token pattern.
+
+Keep WebSockets authenticated via:
+
+Cookie-based session OR
+
+Token sent during connection handshake.
+
+📚 Perfect summary for your README
+
+You can copy this:
+
+In production, authentication should use HTTPOnly cookies instead of storing JWT tokens in localStorage.
+HTTPOnly cookies cannot be accessed by JavaScript, making them resistant to XSS token theft.
+The browser automatically sends the cookie with every request, and the server validates it.
+This offers a more secure session model compared to localStorage-based token authentication.
+
+pages/login.jsx
+context/AuthContext.jsx
+Steps:
+The frontend sends a POST request to backend:
+
+POST /auth/login
+body: { "username": "...", "password": "..." }
+
+The backend checks password, generates a JWT token, and returns:
+
+{
+  "token": "abcd1234...",
+  "user": { "username": "dennis", "_id": "..." }
+}
+
+Frontend stores both in localStorage:
+token → stored as a string
+user → stored as a JSON string
+The context updates internal user:
+setUser(res.data.user)
+
+The app re-renders and user becomes "logged in".
+
+1. Frontend Calls
+
+Your frontend sends:
+
+Register
+POST /api/auth/register
+
+Login
+POST /api/auth/login
+
+
+So your backend must have:
+
+/api/auth/register route
+
+/api/auth/login route
+
+These routes call controller functions that talk to MongoDB via Mongoose.
+
+✅ 2. Where are these handled in backend?
+
+Typically in your project:
+
+backend/
+   src/
+      controllers/
+         authController.js   <-- 🔥 Login & Register logic
+      routes/
+         authRoutes.js       <-- 🔥 Defines POST /login & POST /register
+      models/
+         User.js             <-- 🔥 MongoDB User schema
+      index.js               <-- 🔥 Main server file (connects everything)
+
+
+Let’s break them down.
+
+✅ 3. index.js (main server file)
+
+This file loads routes and connects to MongoDB.
+
+You will see something like:
+
+import express from 'express'
+import dotenv from 'dotenv'
+import cors from 'cors'
+import connectDB from './config/db.js'
+import authRoutes from './routes/authRoutes.js'
+
+dotenv.config()
+
+connectDB()   // 🔥 Connects to MongoDB Atlas
+
+const app = express()
+app.use(express.json())
+
+app.use(cors({ origin: ['your-frontend-url'], credentials: true }))
+
+app.use('/api/auth', authRoutes)   // 🔥 All auth routes here
+
+app.listen(8000, () => console.log("Server running on port 8000"))
+
+
+This line is important:
+
+app.use('/api/auth', authRoutes)
+
+
+Meaning:
+
+/api/auth/login → authRoutes
+
+/api/auth/register → authRoutes
+
+✅ 4. authRoutes.js
+
+This file defines your routes:
+
+import express from 'express'
+import { registerUser, loginUser } from '../controllers/authController.js'
+
+const router = express.Router()
+
+router.post('/register', registerUser)  // 🔥 POST /api/auth/register
+router.post('/login', loginUser)        // 🔥 POST /api/auth/login
+
+export default router
+
+
+When frontend sends:
+
+POST /api/auth/login
+
+
+It triggers loginUser from authController.
+
+✅ 5. authController.js
+
+This file handles:
+
+Connect to MongoDB user model
+
+Validate user
+
+Hash passwords
+
+Save user
+
+Generate JWT
+
+Return response to frontend
+
+Example:
+
+import User from '../models/User.js'
+import bcrypt from 'bcryptjs'
+import jwt from 'jsonwebtoken'
+
+export const registerUser = async (req, res) => {
+  try {
+    const { username, password } = req.body
+
+    const existing = await User.findOne({ username })
+    if (existing) return res.status(400).json({ message: "User already exists" })
+
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const newUser = await User.create({
+      username,
+      password: hashedPassword
+    })
+
+    const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET)
+
+    res.json({ token, user: newUser })
+  } catch (err) {
+    res.status(500).json({ message: "Register failed" })
+  }
+}
+
+export const loginUser = async (req, res) => {
+  try {
+    const { username, password } = req.body
+
+    const user = await User.findOne({ username })
+    if (!user) return res.status(400).json({ message: "User not found" })
+
+    const isMatch = await bcrypt.compare(password, user.password)
+    if (!isMatch) return res.status(400).json({ message: "Invalid password" })
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET)
+
+    res.json({ token, user })
+  } catch (err) {
+    res.status(500).json({ message: "Login failed" })
+  }
+}
+
+✅ 6. User model (MongoDB Schema)
+
+File: models/User.js
+
+import mongoose from 'mongoose'
+
+const userSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }
+})
+
+export default mongoose.model('User', userSchema)
+
+
+You can modify user fields here if needed.
+
+🧠 So, to answer your question:
+
+Which file does the function for login and register in backend to connect with MongoDB?
+
+👉 These files handle login + register:
+File	Purpose
+src/routes/authRoutes.js	Defines routes /login and /register
+src/controllers/authController.js	Actual logic: talks to MongoDB and handles auth
+src/models/User.js	MongoDB schema used by the controller
+src/index.js	Connects everything + connects to MongoDB
+
+
+┌───────────────────────────┐
+│        FRONTEND           │
+│ React + Vite + Axios      │
+│ Hosted on Vercel          │
+└───────────────┬───────────┘
+                │ HTTP (REST)
+                ▼
+┌─────────────────────────────────────────┐
+│ API Service (api.js)                    │
+│ - axios.create({ baseURL })             │
+│ - Adds Authorization: Bearer <token>    │
+└───────────────┬─────────────────────────┘
+                │ POST /api/auth/login
+                │ POST /api/auth/register
+                ▼
+┌─────────────────────────────────────────┐
+│       BACKEND (Express.js)              │
+│       Hosted on Render                  │
+│ index.js                                │
+│ - Loads middleware                      │
+│ - Loads /api/auth routes                │
+│ - Creates server                        │
+│ - Connects to MongoDB                   │
+└───────────────┬─────────────────────────┘
+                │ calls router
+                ▼
+┌─────────────────────────────────────────┐
+│        ROUTER (authRoutes.js)           │
+│ - router.post('/login', loginUser)      │
+│ - router.post('/register', registerUser)│
+└───────────────┬─────────────────────────┘
+                │ calls controller
+                ▼
+┌─────────────────────────────────────────┐
+│     CONTROLLER (authController.js)      │
+│ registerUser():                         │
+│   - Validate request                    │
+│   - Check if user already exists        │
+│   - bcrypt.hash(password)               │
+│   - Save new user to MongoDB            │
+│   - jwt.sign({ id })                    │
+│   - return { token, user }              │
+│                                         │
+│ loginUser():                            │
+│   - Find user in DB                     │
+│   - bcrypt.compare(password)            │
+│   - jwt.sign({ id })                    │
+│   - return { token, user }              │
+└───────────────┬─────────────────────────┘
+                │ uses model
+                ▼
+┌─────────────────────────────────────────┐
+│  MODEL (User.js - Mongoose Schema)      │
+│ - username: String                      │
+│ - password: String (hashed)             │
+│ - Stored in MongoDB Atlas               │
+└───────────────┬─────────────────────────┘
+                │ Mongoose ODM
+                ▼
+┌─────────────────────────────────────────┐
+│      MONGODB ATLAS (Cloud DB)           │
+│ - Stores users                          │
+│ - Stores messages                       │
+│ - NoSQL documents                       │
+└─────────────────────────────────────────┘
+
+[React Login Page]
+     │ username + password
+     ▼
+[Axios API.post('/api/auth/login')]
+     │
+     ▼
+[Express Route: authRoutes.js]
+     │
+     ▼
+[Controller: loginUser()]
+     │ find user
+     │ check password
+     ▼
+[Mongoose → MongoDB Atlas]
+     │ user found
+     ▼
+[Controller returns JWT + User]
+     │
+     ▼
+[Frontend stores:
+   localStorage.token
+   localStorage.user
+]
+
+[React Register Page]
+     │ username + password
+     ▼
+[Axios API.post('/api/auth/register')]
+     │
+     ▼
+[authRoutes → registerUser()]
+     │ hash password
+     │ save new user
+     ▼
+[MongoDB Atlas]
+     │ user created
+     ▼
+[Backend sends JWT + User]
+     │
+     ▼
+[Frontend saves token + user]
+
+
+
+┌──────────────────────────────────────────────────────────┐
+│                        CLIENT SIDE                       │
+│         React (Vite) + Axios + Socket.IO Client          │
+│         Hosted on Vercel                                 │
+├──────────────────────────────────────────────────────────┤
+│ 1) Login/Register (REST API using Axios)                 │
+│    - Sends username/password → /api/auth/...             │
+│    - Receives JWT token                                  │
+│    - Stores token in localStorage                        │
+│                                                          │
+│ 2) WebSocket Connect                                     │
+│    socket = io(BACKEND_URL, {                            │
+│      auth: { token: JWT }                                │
+│    })                                                    │
+│   - Sends JWT to backend for handshake auth              │
+│                                                          │
+│ 3) Send message                                          │
+│    socket.emit("send_message", { toUserId, text })       │
+│                                                          │
+│ 4) Receive messages                                      │
+│    socket.on("new_message", (msg) => display(msg))       │
+│                                                          │
+└──────────────────────────────────────────────────────────┘
+                    │
+                    │ WebSocket (real-time)
+                    ▼
+┌──────────────────────────────────────────────────────────┐
+│                   BACKEND (Express)                      │
+│                   Hosted on Render                       │
+│  index.js                                                │
+│  - Loads auth routes (REST)                              │
+│  - Creates HTTP + WebSocket server                       │
+│  - Verifies tokens for socket auth                       │
+└───────────────┬───────────────────────────┬──────────────┘
+                │                           │
+                │ HTTP (Axios)              │ WS (Socket.IO)
+                ▼                           ▼
+┌──────────────────────────────┐   ┌────────────────────────┐
+│   AUTH CONTROLLER (REST)     │   │ SOCKET.IO HANDLERS     │
+│   /auth/login                │   │                        │
+│   /auth/register             │   │  on("connection") →    │
+│   - bcrypt.hash()            │   │    verify JWT token    │
+│   - bcrypt.compare()         │   │    attach userId       │
+│   - jwt.sign()               │   │                        │
+└───────────────┬──────────────┘   │  on("send_message") →  │
+                │                  │    save to DB          │
+                ▼                  │    emit to recipient   │
+┌──────────────────────────────┐   │                        │
+│    USER MODEL (Mongoose)     │   │  on("disconnect")      │
+│    - username                │   │                        │
+│    - hashedPassword          │   └────────────────────────┘
+└───────────────┬──────────────┘
+                │
+                │ Mongoose ODM
+                ▼
+┌──────────────────────────────────────────────────────────┐
+│                 MONGODB ATLAS (Cloud DB)                 │
+│  Collections:                                            │
+│     users → stores hashed passwords                      │
+│     messages → stores message history                    │
+│                                                          │
+│  SECURITY:                                               │
+│  - Passwords never stored in plain text                  │
+│  - Connection encrypted via TLS                          │
+│  - IP-whitelisted databases                              │
+│  - Authentication via JWT                                │
+└──────────────────────────────────────────────────────────┘
+
+
+════════════════════════════════════════════════════════════
+                🔒 SECURITY LAYERS (Combined)
+════════════════════════════════════════════════════════════
+
+CLIENT SECURITY
+---------------
+- JWT stored in localStorage  
+- All API requests include Authorization: Bearer <token>  
+- WebSocket connection sends same token for WS authentication  
+
+BACKEND SECURITY
+----------------
+- JWT verification on every protected route  
+- JWT verification during WebSocket handshake  
+- bcrypt hashes passwords (salted + hashed)  
+- CORS allowed only for Vercel frontend  
+- No sensitive data inside JWT (only user id)  
+
+DATABASE SECURITY
+-----------------
+- MongoDB Atlas uses encrypted TLS connection  
+- Passwords stored hashed with bcrypt  
+- Messages stored as normal text (optional E2E encryption later)  
+- IP whitelist ensures only backend can connect  
+
+WEB SOCKET SECURITY
+-------------------
+- Socket.IO `auth: { token }` used for identity  
+- Server rejects connection if token invalid  
+- Each message is tagged with senderId from decoded JWT  
+- No spoofing possible because server re-validates every event  
+
+NETWORK SECURITY
+----------------
+- HTTPS between:  
+    Frontend → Backend (Render)  
+    Backend → MongoDB Atlas  
+- WebSocket upgrades also occur over WSS (TLS encrypted)
+
+

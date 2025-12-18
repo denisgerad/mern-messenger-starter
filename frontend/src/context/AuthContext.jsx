@@ -17,7 +17,7 @@ if (raw) setUser(JSON.parse(raw))
 
 const login = async ({ username, password }) => {
 const res = await API.post('/auth/login', { username, password })
-localStorage.setItem('token', res.data.token)
+// Token is now stored in httpOnly cookie, only save user data
 localStorage.setItem('user', JSON.stringify(res.data.user))
 setUser(res.data.user)
 return res.data
@@ -26,17 +26,22 @@ return res.data
 
 const register = async ({ username, password }) => {
 const res = await API.post('/auth/register', { username, password })
-localStorage.setItem('token', res.data.token)
+// Token is now stored in httpOnly cookie, only save user data
 localStorage.setItem('user', JSON.stringify(res.data.user))
 setUser(res.data.user)
 return res.data
 }
 
 
-const logout = () => {
-localStorage.removeItem('token')
-localStorage.removeItem('user')
-setUser(null)
+const logout = async () => {
+	// Call backend to clear the httpOnly cookie
+	try {
+		await API.post('/auth/logout')
+	} catch (err) {
+		console.error('Logout error:', err)
+	}
+	localStorage.removeItem('user')
+	setUser(null)
 }
 
 

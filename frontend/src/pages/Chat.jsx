@@ -45,7 +45,7 @@ return (
 <aside style={{width:300}}>
 <h3>{user.username}</h3>
 <button onClick={logout}>Logout</button>
-<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} />
+<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} selectedUser={activeConversation} />
 </aside>
 <main style={{flex:1}}>
 <ChatWindow socket={socket} conversationId={activeConversation} user={user} />
