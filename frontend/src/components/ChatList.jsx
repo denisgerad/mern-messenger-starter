@@ -1,4 +1,6 @@
 import React from 'react'
+import Avatar from './Avatar'
+import { getFirstName } from '../utils/avatar'
 
 // Minimal chat list showing online users (from socket) with a demo fallback
 export default function ChatList({ onSelect, onlineUsers = [], selectedUser }){
@@ -8,9 +10,13 @@ export default function ChatList({ onSelect, onlineUsers = [], selectedUser }){
 	]
 
 	return (
-		<div>
-			<div style={{padding:8, fontWeight:'bold'}}>Online</div>
-			{onlineUsers.length === 0 && <div style={{padding:8, color:'#666'}}>No users online</div>}
+		<div className="chat-list">
+			<div className="chat-list-section-title">Online</div>
+			{onlineUsers.length === 0 && (
+				<div style={{padding:12, color:'#667781', fontSize: 14}}>
+					No users online
+				</div>
+			)}
 			{onlineUsers.map(u => {
 				const id = u?.id || u
 				const name = u?.username || id
@@ -19,33 +25,30 @@ export default function ChatList({ onSelect, onlineUsers = [], selectedUser }){
 					<div 
 						key={id} 
 						onClick={()=>onSelect(id)} 
-						style={{
-							padding:10, 
-							cursor:'pointer',
-							backgroundColor: isSelected ? '#e3f2fd' : 'transparent',
-							fontWeight: isSelected ? 'bold' : 'normal'
-						}}
+						className={`chat-list-item ${isSelected ? 'selected' : ''}`}
 					>
-						{name}
+						<Avatar name={name} size={48} online={true} />
+						<div className="chat-list-item-content">
+							<div className="chat-list-item-name">{name}</div>
+							<div className="chat-list-item-status">Online</div>
+						</div>
 					</div>
 				)
 			})}
 
-			<div style={{padding:8, fontWeight:'bold', marginTop:12}}>All</div>
+			<div className="chat-list-section-title" style={{marginTop: 12}}>All</div>
 			{demo.map(d => {
 				const isSelected = selectedUser === d.id
 				return (
 					<div 
 						key={d.id} 
 						onClick={()=>onSelect(d.id)} 
-						style={{
-							padding:10, 
-							cursor:'pointer',
-							backgroundColor: isSelected ? '#e3f2fd' : 'transparent',
-							fontWeight: isSelected ? 'bold' : 'normal'
-						}}
+						className={`chat-list-item ${isSelected ? 'selected' : ''}`}
 					>
-						{d.name}
+						<Avatar name={d.name} size={48} />
+						<div className="chat-list-item-content">
+							<div className="chat-list-item-name">{d.name}</div>
+						</div>
 					</div>
 				)
 			})}

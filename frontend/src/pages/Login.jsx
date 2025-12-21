@@ -32,9 +32,10 @@ alert(err.response?.data?.message || 'Register failed')
 
 return (
 <div className="login">
-<input placeholder="username" value={username} onChange={e=>setUsername(e.target.value)} />
-<input placeholder="password" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
-<div>
+			<h1>💬 Messenger</h1>
+<input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} />
+<input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+			<div style={{ display: 'flex', gap: 12, width: '300px' }}>
 <button onClick={handleLogin}>Login</button>
 <button onClick={handleRegister}>Register</button>
 </div>

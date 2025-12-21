@@ -3,6 +3,7 @@ import io from 'socket.io-client'
 import { AuthContext } from '../context/AuthContext'
 import ChatList from '../components/ChatList'
 import ChatWindow from '../components/ChatWindow'
+import Avatar from '../components/Avatar'
 
 
 const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000'
@@ -36,19 +37,36 @@ setSocket(s)
 return ()=> s.disconnect()
 }, [user])
 
+	// Find the other user's info
+	const otherUser = onlineUsers.find(u => (u?.id || u) === activeConversation) || null
+	const otherUserData = otherUser ? {
+		username: otherUser?.username || activeConversation,
+		online: true
+	} : { username: activeConversation, online: false }
+
 
 if (!user) return <div>Please login</div>
 
 
 return (
 <div className="chat-page">
-<aside style={{width:300}}>
-<h3>{user.username}</h3>
-<button onClick={logout}>Logout</button>
+			<aside className="sidebar">
+				<div className="sidebar-header">
+					<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+						<Avatar name={user.username} size={40} />
+						<h3 style={{ margin: 0 }}>{user.username}</h3>
+					</div>
+					<button className="logout-button" onClick={logout}>Logout</button>
+				</div>
 <ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} selectedUser={activeConversation} />
 </aside>
-<main style={{flex:1}}>
-<ChatWindow socket={socket} conversationId={activeConversation} user={user} />
+			<main className="main-chat">
+				<ChatWindow 
+					socket={socket} 
+					conversationId={activeConversation} 
+					user={user} 
+					otherUser={otherUserData}
+				/>
 </main>
 </div>
 )
