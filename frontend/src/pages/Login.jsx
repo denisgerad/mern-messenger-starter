@@ -7,6 +7,7 @@ export default function Login(){
 const { login, register } = useContext(AuthContext)
 const [username, setUsername] = useState('')
 const [password, setPassword] = useState('')
+const [confirmPassword, setConfirmPassword] = useState('')
 const [accessCode, setAccessCode] = useState('')
 const [isRegistering, setIsRegistering] = useState(false)
 const navigate = useNavigate()
@@ -23,6 +24,11 @@ alert(err.response?.data?.message || 'Login failed')
 
 
 const handleRegister = async () => {
+if (password !== confirmPassword) {
+	alert('Passwords do not match')
+	return
+}
+
 try{
 await register({ username, password, accessCode })
 navigate('/chat')
@@ -52,14 +58,15 @@ return (
 				<>
 <input placeholder="Username" value={username} onChange={e=>setUsername(e.target.value)} />
 <input placeholder="Password" type="password" value={password} onChange={e=>setPassword(e.target.value)} />
+<input placeholder="Confirm Password" type="password" value={confirmPassword} onChange={e=>setConfirmPassword(e.target.value)} />
 <input 
-						placeholder="Access Code (required)" 
+						placeholder="Access Code" 
 						value={accessCode} 
 						onChange={e=>setAccessCode(e.target.value)}
 						style={{ borderColor: '#ff9800' }}
 					/>
 					<p style={{ fontSize: '11px', color: '#ff9800', margin: '5px 0' }}>
-						⚠️ Access code required for demo registration
+						⚠️ Access code required (demo app)
 					</p>
 					<div style={{ display: 'flex', gap: 12, width: '300px' }}>
 <button onClick={handleRegister}>Create Account</button>
