@@ -11,5 +11,9 @@ npm-debug.log*
 frontend/dist/
 backend/node_modules/
 
+# Security & Documentation (Local only)
+SECURITY_INCIDENT.md
+UI_ENHANCEMENTS.md
+
 # OS
 .DS_Store
