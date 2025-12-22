@@ -24,8 +24,8 @@ return res.data
 }
 
 
-const register = async ({ username, password }) => {
-const res = await API.post('/auth/register', { username, password })
+const register = async ({ username, password, accessCode }) => {
+const res = await API.post('/auth/register', { username, password, accessCode })
 // Token is now stored in httpOnly cookie, only save user data
 localStorage.setItem('user', JSON.stringify(res.data.user))
 setUser(res.data.user)

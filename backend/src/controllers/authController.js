@@ -1,14 +1,21 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { jwtSecret } = require('../config');
+const { jwtSecret, demoAccessCode } = require('../config');
 
 
 exports.register = async (req, res) => {
-const { username, password } = req.body;
+const { username, password, accessCode } = req.body;
 
 if (!username || !password) {
 	return res.status(400).json({ message: 'Username and password are required' });
+}
+
+// Check demo access code if configured
+if (demoAccessCode && accessCode !== demoAccessCode) {
+	return res.status(403).json({ 
+		message: 'Invalid access code. This is a demo app - please contact the owner for access.' 
+	});
 }
 
 try {
