@@ -8,6 +8,7 @@ exports.register = async (req, res) => {
 const { username, password } = req.body;
 try {
 const exists = await User.findOne({ username });
+console.log('Registration attempt for username:', username, '| Exists:', exists, '| Type:', typeof exists);
 if (exists) return res.status(400).json({ message: 'Username taken' });
 const salt = await bcrypt.genSalt(10);
 const hash = await bcrypt.hash(password, salt);
