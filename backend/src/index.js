@@ -53,17 +53,7 @@ app.get('/cron/health', (req, res) => {
 
 
 mongoose.connect(mongoUri, { useNewUrlParser: true, useUnifiedTopology: true })
-.then(() => {
-	console.log('Mongo connected');
-	// Drop the problematic email index if it exists
-	const User = require('./models/User');
-	User.collection.dropIndex('email_1')
-		.then(() => console.log('Dropped email_1 index'))
-		.catch(err => {
-			if (err.code === 27) console.log('email_1 index does not exist (OK)');
-			else console.error('Error dropping email index:', err.message);
-		});
-})
+.then(() => console.log('Mongo connected'))
 .catch(err => console.error(err));
 
 

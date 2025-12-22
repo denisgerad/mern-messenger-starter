@@ -24,10 +24,11 @@ return res.data
 }
 
 
-const register = async ({ username, email, password }) => {
-const res = await API.post('/auth/register', { username, email, password })
-// Registration now requires email verification, so don't auto-login
-// Just return the response (which contains verification message)
+const register = async ({ username, password }) => {
+const res = await API.post('/auth/register', { username, password })
+// Token is now stored in httpOnly cookie, only save user data
+localStorage.setItem('user', JSON.stringify(res.data.user))
+setUser(res.data.user)
 return res.data
 }
 
