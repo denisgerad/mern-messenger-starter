@@ -20,9 +20,15 @@ const [onlineUsers, setOnlineUsers] = useState([])
 
 useEffect(()=>{
 if (!user) return
-const s = io(SOCKET_URL)
-setSocket(s)
+		const s = io(SOCKET_URL, {
+			transports: ['websocket', 'polling'],
+			upgrade: true,
+			rememberUpgrade: true,
+			timeout: 10000
+		})
+		setSocket(s)
 		s.on('connect', ()=>{
+			console.log('Socket connected:', s.id)
 			s.emit('user:online', { id: user.id, username: user.username })
 		})
 		s.on('receive:message', (msg)=>{
@@ -34,9 +40,14 @@ setSocket(s)
 			}
 		})
 		s.on('online:users', (list) => {
+			console.log('Online users updated:', list)
 			setOnlineUsers(list || [])
 		})
-return ()=> s.disconnect()
+		s.on('connect_error', (error) => {
+			console.error('Socket connection error:', error)
+		})
+		s.on('disconnect', (reason) => {
+			console.log('Socket disconnected:', reason)
 }, [user])
 
 	// Find the other user's info

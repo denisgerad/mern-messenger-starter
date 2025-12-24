@@ -19,22 +19,33 @@ useEffect(()=>{
 
 useEffect(()=>{
 if (!socket) return
-socket.on('receive:message', (msg)=>{
+const handleReceiveMessage = (msg)=>{
 	// only append if the incoming message belongs to the current conversation
 	const convId = [user.id, conversationId].sort().join(':')
 	console.log('ChatWindow convId:', convId, 'incoming msg.convId:', msg.conversationId)
 	if (msg.conversationId === convId) setMessages(prev => [...prev, msg])
-})
-		socket.on('message:deleted', ({ id }) => {
-			setMessages(prev => prev.filter(m => (m._id || m.id) !== id))
-		})
-		socket.on('conversation:deleted', ({ conversationId: convId }) => {
-			// if the deleted conversation is the one currently open, clear messages
-			const currentConv = [user.id, conversationId].sort().join(':')
-			if (convId === currentConv) setMessages([])
-		})
-return ()=> socket.off('receive:message')
-}, [socket, conversationId])
+}
+
+const handleMessageDeleted = ({ id }) => {
+	setMessages(prev => prev.filter(m => (m._id || m.id) !== id))
+}
+
+const handleConversationDeleted = ({ conversationId: convId }) => {
+	// if the deleted conversation is the one currently open, clear messages
+	const currentConv = [user.id, conversationId].sort().join(':')
+	if (convId === currentConv) setMessages([])
+}
+
+socket.on('receive:message', handleReceiveMessage)
+socket.on('message:deleted', handleMessageDeleted)
+socket.on('conversation:deleted', handleConversationDeleted)
+
+return ()=> {
+	socket.off('receive:message', handleReceiveMessage)
+	socket.off('message:deleted', handleMessageDeleted)
+	socket.off('conversation:deleted', handleConversationDeleted)
+}
+}, [socket, conversationId, user.id])
 
 
 const send = async (text) => {
