@@ -48,37 +48,9 @@ if (!user) return
 		})
 		s.on('disconnect', (reason) => {
 			console.log('Socket disconnected:', reason)
-}, [user])
-
-	// Find the other user's info
-	const otherUser = onlineUsers.find(u => (u?.id || u) === activeConversation) || null
-	const otherUserData = otherUser ? {
-		username: otherUser?.username || activeConversation,
-		online: true
-	} : { username: activeConversation, online: false }
-
-
-if (!user) return <div>Please login</div>
-
-
-return (
-<div className={`chat-page ${activeConversation ? 'conversation-open' : ''}`}>
-			<aside className="sidebar">
-				<div className="sidebar-header">
-					<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-						<Avatar name={user.username} size={40} />
-						<h3 style={{ margin: 0 }}>{user.username}</h3>
-					</div>
-					<button className="logout-button" onClick={async () => { await logout(); navigate('/'); }}>Logout</button>
-				</div>
-				<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} selectedUser={activeConversation} currentUserId={user.id} />
-</aside>
-			<main className="main-chat">
-				<ChatWindow 
-					socket={socket} 
-					conversationId={activeConversation} 
-					user={user} 
-					otherUser={otherUserData}
+		})
+		return ()=> s.disconnect()
+	}, [user])
 					onBack={() => setActiveConversation(null)}
 				/>
 </main>
