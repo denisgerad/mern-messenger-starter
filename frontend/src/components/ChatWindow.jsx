@@ -53,6 +53,9 @@ const send = async (text) => {
 	const receiver = conversationId
 	const convId = [user.id, receiver].sort().join(':')
 	const payload = { conversationId: convId, sender: user.id, receiver, text }
+	console.log('📤 Sending message:', payload)
+	console.log('📤 Socket ID:', socket.id)
+	console.log('📤 Socket connected:', socket.connected)
 	socket.emit('send:message', payload)
 	setMessages(prev => [...prev, { ...payload, createdAt: new Date().toISOString() }])
 }
