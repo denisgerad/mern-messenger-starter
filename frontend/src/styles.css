@@ -236,10 +236,29 @@ body{
   font-size: 14px;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 
 .delete-conversation-btn:hover {
   background: #c62828;
+}
+
+.back-button {
+  padding: 8px 12px;
+  background: transparent;
+  color: #e9edef;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.back-button:hover {
+  background: #2a3942;
+  border-radius: 50%;
 }
 
 /* Messages Container */
@@ -452,6 +471,19 @@ body{
   
   .message-content {
     max-width: 80%;
+  }
+  
+  .back-button {
+    display: flex;
+  }
+  
+  .delete-conversation-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .chat-header {
+    gap: 8px;
   }
 }
 

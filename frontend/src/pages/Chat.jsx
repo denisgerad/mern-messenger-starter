@@ -51,7 +51,7 @@ if (!user) return <div>Please login</div>
 
 
 return (
-<div className="chat-page">
+<div className={`chat-page ${activeConversation ? 'conversation-open' : ''}`}>
 			<aside className="sidebar">
 				<div className="sidebar-header">
 					<div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -68,6 +68,7 @@ return (
 					conversationId={activeConversation} 
 					user={user} 
 					otherUser={otherUserData}
+					onBack={() => setActiveConversation(null)}
 				/>
 </main>
 </div>

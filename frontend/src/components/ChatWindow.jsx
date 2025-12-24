@@ -5,7 +5,7 @@ import Avatar from './Avatar'
 import { getFirstName } from '../utils/avatar'
 
 
-export default function ChatWindow({ socket, conversationId, user, otherUser }){
+export default function ChatWindow({ socket, conversationId, user, otherUser, onBack }){
 const [messages, setMessages] = useState([])
 
 
@@ -56,6 +56,11 @@ return (
 			{/* Chat Header */}
 			{conversationId && (
 				<div className="chat-header">
+					{onBack && (
+						<button className="back-button" onClick={onBack}>
+							←
+						</button>
+					)}
 					<Avatar name={otherUser?.username || conversationId} size={40} />
 					<div className="chat-header-info">
 						<div className="chat-header-name">
