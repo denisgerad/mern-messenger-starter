@@ -60,7 +60,7 @@ return (
 					</div>
 					<button className="logout-button" onClick={async () => { await logout(); navigate('/'); }}>Logout</button>
 				</div>
-<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} selectedUser={activeConversation} />
+				<ChatList onSelect={setActiveConversation} onlineUsers={onlineUsers} selectedUser={activeConversation} currentUserId={user.id} />
 </aside>
 			<main className="main-chat">
 				<ChatWindow 

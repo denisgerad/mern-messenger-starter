@@ -3,21 +3,27 @@ import Avatar from './Avatar'
 import { getFirstName } from '../utils/avatar'
 
 // Minimal chat list showing online users (from socket) with a demo fallback
-export default function ChatList({ onSelect, onlineUsers = [], selectedUser }){
+export default function ChatList({ onSelect, onlineUsers = [], selectedUser, currentUserId }){
 	const demo = [
 		{ id: 'conv:1', name: 'Alice' },
 		{ id: 'conv:2', name: 'Bob' }
 	]
+	
+	// Filter out current user from online users
+	const filteredOnlineUsers = onlineUsers.filter(u => {
+		const id = u?.id || u
+		return id !== currentUserId
+	})
 
 	return (
 		<div className="chat-list">
 			<div className="chat-list-section-title">Online</div>
-			{onlineUsers.length === 0 && (
+			{filteredOnlineUsers.length === 0 && (
 				<div style={{padding:12, color:'#667781', fontSize: 14}}>
 					No users online
 				</div>
 			)}
-			{onlineUsers.map(u => {
+			{filteredOnlineUsers.map(u => {
 				const id = u?.id || u
 				const name = u?.username || id
 				const isSelected = selectedUser === id
