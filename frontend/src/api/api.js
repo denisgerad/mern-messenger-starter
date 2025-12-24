@@ -9,23 +9,46 @@ const API = axios.create({
 
 // Add token from localStorage if cookies don't work (mobile fallback)
 API.interceptors.request.use((config) => {
-	const token = localStorage.getItem('token')
-	if (token) {
-		config.headers.Authorization = `Bearer ${token}`
+	try {
+		const token = localStorage.getItem('token')
+		if (token) {
+			config.headers.Authorization = `Bearer ${token}`
+			console.log('✅ Token added to request headers')
+		} else {
+			console.log('⚠️ No token found in localStorage')
+		}
+	} catch (err) {
+		// iOS Safari in private mode may throw on localStorage access
+		console.error('❌ localStorage access error:', err)
 	}
 	return config
+}, (error) => {
+	console.error('❌ Request interceptor error:', error)
+	return Promise.reject(error)
 })
 
 // Store token from response if available
 API.interceptors.response.use(
 	(response) => {
 		// If the response contains a token, store it
-		if (response.data?.token) {
-			localStorage.setItem('token', response.data.token)
+		try {
+			if (response.data?.token) {
+				localStorage.setItem('token', response.data.token)
+				console.log('✅ Token stored in localStorage')
+			}
+		} catch (err) {
+			// iOS Safari in private mode may throw on localStorage access
+			console.error('❌ localStorage write error:', err)
 		}
 		return response
 	},
 	(error) => {
+		console.error('❌ API Error:', {
+			url: error.config?.url,
+			method: error.config?.method,
+			status: error.response?.status,
+			message: error.response?.data?.message || error.message
+		})
 		return Promise.reject(error)
 	}
 )

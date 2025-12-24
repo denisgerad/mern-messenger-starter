@@ -7,6 +7,8 @@ import { getFirstName } from '../utils/avatar'
 
 export default function ChatWindow({ socket, conversationId, user, otherUser, onBack }){
 const [messages, setMessages] = useState([])
+const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+const [isDeleting, setIsDeleting] = useState(false)
 
 
 useEffect(()=>{
@@ -60,6 +62,59 @@ const send = async (text) => {
 	setMessages(prev => [...prev, { ...payload, createdAt: new Date().toISOString() }])
 }
 
+const handleDeleteConversation = () => {
+	setShowDeleteConfirm(true)
+}
+
+const executeDelete = async () => {
+	if (!conversationId || isDeleting) return;
+	
+	setIsDeleting(true);
+	setShowDeleteConfirm(false);
+	
+	const convId = [user.id, conversationId].sort().join(':');
+	
+	try {
+		console.log('Deleting conversation:', convId);
+		
+		// Get token from localStorage for debugging
+		const token = localStorage.getItem('token');
+		console.log('Token available:', !!token);
+		console.log('Status: connected');
+		
+		const response = await API.delete(`/messages/conversation/${convId}`);
+		console.log('Delete response:', response.data);
+		
+		// Tell other participant to clear the conversation
+		if (socket && socket.connected) {
+			socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId });
+		}
+		
+		setMessages([]);
+	} catch (err) {
+		console.error('Delete error:', err);
+		console.error('Error details:', {
+			status: err.response?.status,
+			data: err.response?.data,
+			message: err.message
+		});
+		
+		const errorMsg = err.response?.data?.message || err.message || 'Delete conversation failed';
+		
+		// Use custom alert for iOS compatibility
+		setShowDeleteConfirm(false);
+		setTimeout(() => {
+			alert(errorMsg);
+		}, 100);
+	} finally {
+		setIsDeleting(false);
+	}
+}
+
+const cancelDelete = () => {
+	setShowDeleteConfirm(false)
+}
+
 	const formatTime = (timestamp) => {
 		const date = new Date(timestamp)
 		return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
@@ -67,6 +122,32 @@ const send = async (text) => {
 
 return (
 <div className="chat-window">
+			{/* Custom Delete Confirmation Dialog - iOS Compatible */}
+			{showDeleteConfirm && (
+				<div className="modal-overlay" onClick={cancelDelete}>
+					<div className="modal-content" onClick={(e) => e.stopPropagation()}>
+						<h3>Delete Conversation?</h3>
+						<p>This will permanently delete all messages in this conversation.</p>
+						<div className="modal-buttons">
+							<button 
+								className="modal-btn modal-btn-cancel" 
+								onClick={cancelDelete}
+								disabled={isDeleting}
+							>
+								Cancel
+							</button>
+							<button 
+								className="modal-btn modal-btn-delete" 
+								onClick={executeDelete}
+								disabled={isDeleting}
+							>
+								{isDeleting ? 'Deleting...' : 'Delete'}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+
 			{/* Chat Header */}
 			{conversationId && (
 				<div className="chat-header">
@@ -86,20 +167,16 @@ return (
 					</div>
 					<button 
 						className="delete-conversation-btn"
-						onClick={async ()=>{
-							if (!conversationId) return;
-							if (!confirm('Delete this conversation?')) return;
-							const convId = [user.id, conversationId].sort().join(':')
-							try{
-								const response = await API.delete(`/messages/conversation/${convId}`)
-								// tell other participant to clear the conversation
-								socket && socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId })
-								setMessages([])
-							}catch(err){
-								console.error('Delete error:', err)
-								const errorMsg = err.response?.data?.message || err.message || 'Delete conversation failed'
-								alert(errorMsg)
-							}
+						onClick={(e)=>{
+							// Prevent event bubbling for iOS Safari compatibility
+							e.preventDefault();
+							e.stopPropagation();
+							handleDeleteConversation();
+						}}
+						onTouchEnd={(e)=>{
+							// iOS Safari touch event handling
+							e.preventDefault();
+							e.stopPropagation();
 						}}
 					>
 						🗑️ Delete
