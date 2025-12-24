@@ -17,18 +17,20 @@ if (raw) setUser(JSON.parse(raw))
 
 const login = async ({ username, password }) => {
 const res = await API.post('/auth/login', { username, password })
-// Token is now stored in httpOnly cookie, only save user data
-localStorage.setItem('user', JSON.stringify(res.data.user))
-setUser(res.data.user)
+		// Token is now stored in httpOnly cookie, but also save to localStorage for mobile fallback
+		if (res.data.token) {
+			localStorage.setItem('token', res.data.token)
+		}
 return res.data
 }
 
 
 const register = async ({ username, password, accessCode }) => {
 const res = await API.post('/auth/register', { username, password, accessCode })
-// Token is now stored in httpOnly cookie, only save user data
-localStorage.setItem('user', JSON.stringify(res.data.user))
-setUser(res.data.user)
+		// Token is now stored in httpOnly cookie, but also save to localStorage for mobile fallback
+		if (res.data.token) {
+			localStorage.setItem('token', res.data.token)
+		}
 return res.data
 }
 
@@ -41,13 +43,6 @@ const logout = async () => {
 		console.error('Logout error:', err)
 	}
 	localStorage.removeItem('user')
-	setUser(null)
-}
-
-
-return (
-<AuthContext.Provider value={{ user, login, register, logout }}>
-{children}
-</AuthContext.Provider>
+		localStorage.removeItem('token')
 )
 }

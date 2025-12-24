@@ -74,14 +74,17 @@ return (
 						className="delete-conversation-btn"
 						onClick={async ()=>{
 							if (!conversationId) return;
+							if (!confirm('Delete this conversation?')) return;
 							const convId = [user.id, conversationId].sort().join(':')
 							try{
-								await API.delete(`/messages/conversation/${convId}`)
+								const response = await API.delete(`/messages/conversation/${convId}`)
 								// tell other participant to clear the conversation
 								socket && socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId })
 								setMessages([])
 							}catch(err){
-								alert(err.response?.data?.message || 'Delete conversation failed')
+								console.error('Delete error:', err)
+								const errorMsg = err.response?.data?.message || err.message || 'Delete conversation failed'
+								alert(errorMsg)
 							}
 						}}
 					>

@@ -25,7 +25,9 @@ export default function ChatList({ onSelect, onlineUsers = [], selectedUser, cur
 			)}
 			{filteredOnlineUsers.map(u => {
 				const id = u?.id || u
-				const name = u?.username || id
+				const name = u?.username
+				// Only show users with valid usernames (skip if only ID is available)
+				if (!name || name === id) return null
 				const isSelected = selectedUser === id
 				return (
 					<div 
@@ -40,7 +42,7 @@ export default function ChatList({ onSelect, onlineUsers = [], selectedUser, cur
 						</div>
 					</div>
 				)
-			})}
+			}).filter(Boolean)}
 
 			<div className="chat-list-section-title" style={{marginTop: 12}}>All</div>
 			{demo.map(d => {
