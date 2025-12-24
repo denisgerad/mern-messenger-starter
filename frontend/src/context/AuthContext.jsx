@@ -43,6 +43,6 @@ const logout = async () => {
 		console.error('Logout error:', err)
 	}
 	localStorage.removeItem('user')
-		localStorage.removeItem('token')
-)
+	localStorage.removeItem('token')
+	setUser(null)
 }
