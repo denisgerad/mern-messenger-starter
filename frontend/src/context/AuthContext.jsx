@@ -18,11 +18,13 @@ if (raw) setUser(JSON.parse(raw))
 const login = async ({ username, password }) => {
 	console.log('🔐 Login attempt...')
 	const res = await API.post('/auth/login', { username, password })
-	console.log('📥 Login response received:', {
+	console.log('📥 Login response received:', JSON.stringify({
 		hasToken: !!res.data.token,
 		hasUser: !!res.data.user,
-		tokenLength: res.data.token?.length || 0
-	})
+		tokenLength: res.data.token?.length || 0,
+		responseKeys: Object.keys(res.data),
+		responseDataPreview: JSON.stringify(res.data).substring(0, 100)
+	}, null, 2))
 	
 	// Test localStorage availability
 	try {
@@ -39,14 +41,20 @@ const login = async ({ username, password }) => {
 		try {
 			localStorage.setItem('token', res.data.token)
 			const savedToken = localStorage.getItem('token')
-			console.log('💾 Token save result:', {
+			console.log('💾 Token save result:', JSON.stringify({
 				saved: savedToken === res.data.token,
 				savedLength: savedToken?.length || 0,
 				expectedLength: res.data.token.length
-			})
+			}, null, 2))
 		} catch (e) {
 			console.error('❌ Failed to save token:', e.message)
 		}
+	} else {
+		console.error('❌ NO TOKEN IN LOGIN RESPONSE!', JSON.stringify({
+			responseData: res.data,
+			cookies: document.cookie,
+			headers: Object.keys(res.headers || {})
+		}, null, 2))
 	}
 	
 	try {
@@ -65,10 +73,11 @@ const login = async ({ username, password }) => {
 const register = async ({ username, password, accessCode }) => {
 	console.log('📝 Register attempt...')
 	const res = await API.post('/auth/register', { username, password, accessCode })
-	console.log('📥 Register response received:', {
+	console.log('📥 Register response received:', JSON.stringify({
 		hasToken: !!res.data.token,
-		hasUser: !!res.data.user
-	})
+		hasUser: !!res.data.user,
+		responseKeys: Object.keys(res.data)
+	}, null, 2))
 	
 	// Token is now stored in httpOnly cookie, but also save to localStorage for mobile fallback
 	if (res.data.token) {

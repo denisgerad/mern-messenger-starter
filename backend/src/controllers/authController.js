@@ -35,7 +35,8 @@ const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { e
 			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 		});
-		res.json({ user: { id: user._id, username: user.username } });
+		// Also send token in response body for mobile fallback (iOS Safari may not support httpOnly cookies)
+		res.json({ user: { id: user._id, username: user.username }, token });
 } catch (err) {
 	console.error('Register error:', err);
 	if (err && err.code === 11000) {
@@ -63,7 +64,8 @@ const token = jwt.sign({ id: user._id, username: user.username }, jwtSecret, { e
 			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
 		});
-		res.json({ user: { id: user._id, username: user.username } });
+		// Also send token in response body for mobile fallback (iOS Safari may not support httpOnly cookies)
+		res.json({ user: { id: user._id, username: user.username }, token });
 } catch (err) {
 	console.error('Login error:', err);
 	res.status(500).json({ message: 'Server error' });
