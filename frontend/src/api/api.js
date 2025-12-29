@@ -10,8 +10,19 @@ const API = axios.create({
 // Add token from localStorage if cookies don't work (mobile fallback)
 API.interceptors.request.use((config) => {
 	const token = localStorage.getItem('token')
+	console.log('🔍 API Request Interceptor:', {
+		url: config.url,
+		method: config.method,
+		hasToken: !!token,
+		tokenPreview: token ? `${token.substring(0, 20)}...` : 'NONE',
+		withCredentials: config.withCredentials,
+		userAgent: navigator.userAgent.substring(0, 50)
+	})
 	if (token) {
 		config.headers.Authorization = `Bearer ${token}`
+		console.log('✅ Authorization header set')
+	} else {
+		console.warn('⚠️ NO TOKEN FOUND IN LOCALSTORAGE')
 	}
 	return config
 })
@@ -22,10 +33,18 @@ API.interceptors.response.use(
 		// If the response contains a token, store it
 		if (response.data?.token) {
 			localStorage.setItem('token', response.data.token)
+			console.log('💾 Token stored from response')
 		}
 		return response
 	},
 	(error) => {
+		console.error('❌ API Error:', {
+			status: error.response?.status,
+			message: error.response?.data?.message,
+			url: error.config?.url,
+			method: error.config?.method,
+			hasAuthHeader: !!error.config?.headers?.Authorization
+		})
 		return Promise.reject(error)
 	}
 )
