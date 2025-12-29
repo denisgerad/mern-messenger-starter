@@ -93,46 +93,51 @@ return (
 							// Check token before attempting delete
 							const token = localStorage.getItem('token')
 							const storedUser = localStorage.getItem('user')
-				const checkData = {
-					hasToken: !!token,
-					hasUser: !!storedUser,
-					userIdFromContext: user.id,
-					conversationId,
-					userAgent: navigator.userAgent.substring(0, 80)
-				}
-				console.log('🔍 Pre-Delete Check:', JSON.stringify(checkData, null, 2))
-								alert('Your session has expired. Please log in again.')
-								return
+						const checkData = {
+							hasToken: !!token,
+							hasUser: !!storedUser,
+							userIdFromContext: user.id,
+							conversationId,
+							userAgent: navigator.userAgent.substring(0, 80)
+						}
+						console.log('🔍 Pre-Delete Check:', JSON.stringify(checkData, null, 2))
+						
+						if (!token) {
+							console.error('❌ No token in localStorage')
+							alert('Your session has expired. Please log in again.')
+							return
+						}
+						
+						const convId = [user.id, conversationId].sort().join(':')
+						console.log('🗑️ Attempting delete:', convId)
+						
+						try{
+							const response = await API.delete(`/messages/conversation/${convId}`)
+							console.log('✅ Delete successful:', response.data)
+							// tell other participant to clear the conversation
+							socket && socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId })
+							setMessages([])
+						}catch(err){
+							console.error('❌ Delete error:', err)
+							const errDetails = {
+								status: err.response?.status,
+								message: err.response?.data?.message,
+								hasAuthHeader: !!err.config?.headers?.Authorization,
+								url: err.config?.url
 							}
-							
-							const convId = [user.id, conversationId].sort().join(':')
-							console.log('🗑️ Attempting delete:', convId)
-							
-							try{
-								const response = await API.delete(`/messages/conversation/${convId}`)
-								console.log('✅ Delete successful:', response.data)
-								// tell other participant to clear the conversation
-								socket && socket.emit('conversation:deleted', { conversationId: convId, otherId: conversationId })
-								setMessages([])
-							}catch(err){
-								console.error('❌ Delete error:', err)
-					const errDetails = {
-						status: err.response?.status,
-						message: err.response?.data?.message,
-						hasAuthHeader: !!err.config?.headers?.Authorization,
-						url: err.config?.url
-					}
-					console.error('Error details:', JSON.stringify(errDetails, null, 2))
-								
-								// Provide specific guidance for auth errors
-								if (err.response?.status === 401) {
-									alert('Authentication failed. Your session may have expired. Please try:\n1. Refresh the page\n2. Log out and log back in')
-								} else {
-									alert(errorMsg)
-								}
-							}
-						}}
-					>
+							console.error('Error details:', JSON.stringify(errDetails, null, 2))
+						
+						const errorMsg = err.response?.data?.message || err.message || 'Delete conversation failed'
+						
+						// Provide specific guidance for auth errors
+						if (err.response?.status === 401) {
+							alert('Authentication failed. Your session may have expired. Please try:\n1. Refresh the page\n2. Log out and log back in')
+						} else {
+							alert(errorMsg)
+						}
+}
+}}
+>
 						🗑️ Delete
 					</button>
 				</div>
