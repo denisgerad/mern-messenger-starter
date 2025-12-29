@@ -93,16 +93,14 @@ return (
 							// Check token before attempting delete
 							const token = localStorage.getItem('token')
 							const storedUser = localStorage.getItem('user')
-							console.log('🔍 Pre-Delete Check:', {
-								hasToken: !!token,
-								hasUser: !!storedUser,
-								userIdFromContext: user.id,
-								conversationId,
-								userAgent: navigator.userAgent.substring(0, 80)
-							})
-							
-							if (!token) {
-								console.error('❌ No token in localStorage')
+				const checkData = {
+					hasToken: !!token,
+					hasUser: !!storedUser,
+					userIdFromContext: user.id,
+					conversationId,
+					userAgent: navigator.userAgent.substring(0, 80)
+				}
+				console.log('🔍 Pre-Delete Check:', JSON.stringify(checkData, null, 2))
 								alert('Your session has expired. Please log in again.')
 								return
 							}
@@ -118,14 +116,13 @@ return (
 								setMessages([])
 							}catch(err){
 								console.error('❌ Delete error:', err)
-								console.error('Error details:', {
-									status: err.response?.status,
-									message: err.response?.data?.message,
-									hasAuthHeader: !!err.config?.headers?.Authorization,
-									url: err.config?.url
-								})
-								
-								const errorMsg = err.response?.data?.message || err.message || 'Delete conversation failed'
+					const errDetails = {
+						status: err.response?.status,
+						message: err.response?.data?.message,
+						hasAuthHeader: !!err.config?.headers?.Authorization,
+						url: err.config?.url
+					}
+					console.error('Error details:', JSON.stringify(errDetails, null, 2))
 								
 								// Provide specific guidance for auth errors
 								if (err.response?.status === 401) {

@@ -20,6 +20,23 @@ const [onlineUsers, setOnlineUsers] = useState([])
 
 useEffect(()=>{
 if (!user) return
+		
+		// Check localStorage on Chat page mount
+		const token = localStorage.getItem('token')
+		const storedUser = localStorage.getItem('user')
+		console.log('📱 Chat Page Mounted - localStorage Check:', JSON.stringify({
+			hasToken: !!token,
+			tokenLength: token?.length || 0,
+			hasUser: !!storedUser,
+			userFromContext: user.username,
+			timestamp: new Date().toISOString()
+		}, null, 2))
+		
+		if (!token) {
+			console.error('⚠️ WARNING: No token found on Chat page mount!')
+			console.log('💡 This means token was either never saved or was cleared between login and here')
+		}
+		
 		const s = io(SOCKET_URL, {
 			transports: ['websocket', 'polling'],
 			upgrade: true,
